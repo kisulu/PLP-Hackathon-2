@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}Premium Plans - AI Study Buddy{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="premium-header">
+        <div class="premium-icon">⭐</div>
+        <h1>Upgrade to Premium</h1>
+        <p>Unlock advanced features and support African education</p>
+    </div>
+    
+    <div class="pricing-grid">
+        <!-- Free Plan -->
+        <div class="pricing-card">
+            <div class="plan-header">
+                <h3>Free Plan</h3>
+                <div class="plan-price">
+                    <span class="currency">KES</span>
+                    <span class="amount">0</span>
+                    <span class="period">/month</span>
+                </div>
+            </div>
+            
+            <div class="plan-features">
+                <div class="feature">✅ 10 flashcards per day</div>
+                <div class="feature">✅ Basic AI generation</div>
+                <div class="feature">✅ Study progress tracking</div>
+                <div class="feature">✅ Mobile access</div>
+                <div class="feature disabled">❌ Unlimited flashcards</div>
+                <div class="feature disabled">❌ Advanced AI models</div>
+                <div class="feature disabled">❌ Offline study mode</div>
+                <div class="feature disabled">❌ Export to PDF</div>
+            </div>
+            
+            <button class="plan-btn current" disabled>Current Plan</button>
+        </div>
+        
+        <!-- Premium Plan -->
+        <div class="pricing-card featured">
+            <div class="plan-badge">Most Popular</div>
+            <div class="plan-header">
+                <h3>Premium Plan</h3>
+                <div class="plan-price">
+                    <span class="currency">KES</span>
+                    <span class="amount">500</span>
+                    <span class="period">/month</span>
+                </div>
+            </div>
+            
+            <div class="plan-features">
+                <div class="feature">✅ Unlimited flashcards</div>
+                <div class="feature">✅ Advanced AI models</div>
+                <div class="feature">✅ Offline study mode</div>
+                <div class="feature">✅ Export to PDF</div>
+                <div class="feature">✅ Priority support</div>
+                <div class="feature">✅ Custom study schedules</div>
+                <div class="feature">✅ Analytics dashboard</div>
+                <div class="feature">✅ Team collaboration</div>
+            </div>
+            
+            <button class="plan-btn premium" onclick="initiatePremiumPayment()">
+                Upgrade Now
+            </button>
+        </div>
+        
+        <!-- Student Plan -->
+        <div class="pricing-card">
+            <div class="plan-header">
+                <h3>Student Plan</h3>
+                <div class="plan-price">
+                    <span class="currency">KES</span>
+                    <span class="amount">300</span>
+                    <span class="period">/month</span>
+                </div>
+            </div>
+            
+            <div class="plan-features">
+                <div class="feature">✅ 100 flashcards per day</div>
+                <div class="feature">✅ Standard AI generation</div>
+                <div class="feature">✅ Study progress tracking</div>
+                <div class="feature">✅ Mobile access</div>
+                <div class="feature">✅ Basic analytics</div>
+                <div class="feature disabled">❌ Advanced AI models</div>
+                <div class="feature disabled">❌ Team collaboration</div>
+                <div class="feature disabled">❌ Priority support</div>
+            </div>
+            
+            <button class="plan-btn student" onclick="initiateStudentPayment()">
+                Choose Student Plan
+            </button>
+        </div>
+    </div>
+    
+    <!-- Payment Methods -->
+    <div class="payment-methods">
+        <h2>💳 Secure Payment Options</h2>
+        <div class="payment-options">
+            <div class="payment-option">
+                <div class="payment-icon">📱</div>
+                <h3>M-Pesa</h3>
+                <p>Pay securely with your mobile money</p>
+            </div>
+            <div class="payment-option">
+                <div class="payment-icon">💳</div>
+                <h3>Debit/Credit Card</h3>
+                <p>Visa, Mastercard accepted</p>
+            </div>
+            <div class="payment-option">
+                <div class="payment-icon">🏦</div>
+                <h3>Bank Transfer</h3>
+                <p>Direct bank account transfer</p>
+            </div>
+        </div>
+        <p class="payment-note">
+            🔒 All payments are processed securely through IntaSend, 
+            a trusted African payment gateway
+        </p>
+    </div>
+    
+    <!-- Benefits for African Students -->
+    <div class="african-benefits">
+        <h2>🌍 Built for African Students</h2>
+        <div class="benefits-grid">
+            <div class="benefit-item">
+                <div class="benefit-icon">🌐</div>
+                <h3>Local Payment Methods</h3>
+                <p>M-Pesa, Airtel Money, and local bank transfers supported</p>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon">📶</div>
+                <h3>Low Bandwidth Optimized</h3>
+                <p>Works efficiently even with slow internet connections</p>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon">💰</div>
+                <h3>Affordable Pricing</h3>
+                <p>Pricing designed for African student budgets</p>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon">🎓</div>
+                <h3>Curriculum Aligned</h3>
+                <p>Supports African educational curricula and exam formats</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="payment-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>💳 Complete Your Payment</h2>
+            <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <div id="payment-form-container">
+                <!-- IntaSend payment form will be loaded here -->
+                <div class="payment-loading">
+                    <div class="spinner"></div>
+                    <p>Loading secure payment form...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('suggestion-form');
+    const textArea = document.getElementById('suggestion-content');
+    const charCount = document.getElementById('suggestion-char-count');
+    const submitBtn = document.getElementById('submit-suggestion-btn');
+    const sendEmailsBtn = document.getElementById('send-emails-btn');
+    
+    // Character counter
+    textArea.addEventListener('input', function() {
+        const length = this.value.length;
+        charCount.textContent = length;
+        submitBtn.disabled = length < 10;
+        
+        if (length >= 10) {
+            charCount.style.color = '#059669';
+        } else {
+            charCount.style.color = '#DC2626';
+        }
+    });
+    
+    // Form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const content = textArea.value.trim();
+        if (content.length < 10) {
+            showMessage('Please provide a meaningful suggestion (at least 10 characters)', 'error');
+            return;
+        }
+        
+        setSubmitLoading(true);
+        
+        try {
+            const response = await fetch('/suggestions/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: content })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showMessage(data.message, 'success');
+                textArea.value = '';
+                charCount.textContent = '0';
+                submitBtn.disabled = true;
+                
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showMessage(data.error || 'Failed to submit suggestion', 'error');
+            }
+        } catch (error) {
+            showMessage('Network error. Please try again.', 'error');
+        } finally {
+            setSubmitLoading(false);
+        }
+    });
+    
+    // Send emails
+    sendEmailsBtn.addEventListener('click', async function() {
+        if (!confirm('Send confirmation emails to all users who submitted suggestions?')) {
+            return;
+        }
+        
+        setEmailLoading(true);
+        
+        try {
+            const response = await fetch('/suggestions/send_confirmations', {
+                method: 'POST'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showMessage(data.message, 'success');
+            } else {
+                showMessage(data.error || 'Failed to send emails', 'error');
+            }
+        } catch (error) {
+            showMessage('Network error. Please try again.', 'error');
+        } finally {
+            setEmailLoading(false);
+        }
+    });
+    
+    function setSubmitLoading(loading) {
+        const btnText = submitBtn.querySelector('.btn-text');
+        const btnLoader = submitBtn.querySelector('.btn-loader');
+        
+        if (loading) {
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'flex';
+            submitBtn.disabled = true;
+        } else {
+            btnText.style.display = 'inline';
+            btnLoader.style.display = 'none';
+            submitBtn.disabled = textArea.value.length < 10;
+        }
+    }
+    
+    function setEmailLoading(loading) {
+        const btnText = sendEmailsBtn.querySelector('.btn-text');
+        const btnLoader = sendEmailsBtn.querySelector('.btn-loader');
+        
+        if (loading) {
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'flex';
+            sendEmailsBtn.disabled = true;
+        } else {
+            btnText.style.display = 'inline';
+            btnLoader.style.display = 'none';
+            sendEmailsBtn.disabled = false;
+        }
+    }
+    
+    function showMessage(message, type) {
+        const existingMessage = document.querySelector('.temp-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `temp-message ${type === 'success' ? 'success-message' : 'error-message'}`;
+        messageDiv.innerHTML = `
+            <span>${message}</span>
+            <button onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        form.insertBefore(messageDiv, form.firstChild);
+        
+        setTimeout(() => {
+            if (messageDiv.parentElement) {
+                messageDiv.remove();
+            }
+        }, 5000);
+    }
+});
+
+// Payment functions
+function initiatePremiumPayment() {
+    initiatePayment('premium', 500);
+}
+
+function initiateStudentPayment() {
+    initiatePayment('student', 300);
+}
+
+function initiatePayment(plan, amount) {
+    // Show payment modal
+    document.getElementById('payment-modal').style.display = 'flex';
+    
+    // Simulate IntaSend payment integration
+    const container = document.getElementById('payment-form-container');
+    
+    setTimeout(() => {
+        container.innerHTML = `
+            <div class="payment-form">
+                <h3>💳 Pay KES ${amount} for ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan</h3>
+                
+                <div class="payment-methods-selection">
+                    <button class="payment-method-btn" onclick="selectPaymentMethod('mpesa')">
+                        📱 M-Pesa
+                    </button>
+                    <button class="payment-method-btn" onclick="selectPaymentMethod('card')">
+                        💳 Card
+                    </button>
+                    <button class="payment-method-btn" onclick="selectPaymentMethod('bank')">
+                        🏦 Bank Transfer
+                    </button>
+                </div>
+                
+                <div id="payment-details" style="display: none;">
+                    <!-- Payment details will be shown here -->
+                </div>
+                
+                <div class="payment-security">
+                    <p>🔒 Secured by IntaSend - Trusted African Payment Gateway</p>
+                </div>
+            </div>
+        `;
+    }, 1000);
+}
+
+function selectPaymentMethod(method) {
+    const detailsDiv = document.getElementById('payment-details');
+    
+    let content = '';
+    switch(method) {
+        case 'mpesa':
+            content = `
+                <div class="payment-method-form">
+                    <h4>📱 M-Pesa Payment</h4>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" placeholder="254712345678" required>
+                    </div>
+                    <button class="payment-submit-btn" onclick="processPayment('mpesa')">
+                        Pay with M-Pesa
+                    </button>
+                </div>
+            `;
+            break;
+        case 'card':
+            content = `
+                <div class="payment-method-form">
+                    <h4>💳 Card Payment</h4>
+                    <div class="form-group">
+                        <label>Card Number</label>
+                        <input type="text" placeholder="1234 5678 9012 3456" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Expiry</label>
+                            <input type="text" placeholder="MM/YY" required>
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="text" placeholder="123" required>
+                        </div>
+                    </div>
+                    <button class="payment-submit-btn" onclick="processPayment('card')">
+                        Pay with Card
+                    </button>
+                </div>
+            `;
+            break;
+        case 'bank':
+            content = `
+                <div class="payment-method-form">
+                    <h4>🏦 Bank Transfer</h4>
+                    <div class="bank-details">
+                        <p><strong>Bank:</strong> Equity Bank</p>
+                        <p><strong>Account:</strong> 1234567890</p>
+                        <p><strong>Reference:</strong> AISB-{{ current_user.id }}</p>
+                    </div>
+                    <button class="payment-submit-btn" onclick="processPayment('bank')">
+                        I've Made the Transfer
+                    </button>
+                </div>
+            `;
+            break;
+    }
+    
+    detailsDiv.innerHTML = content;
+    detailsDiv.style.display = 'block';
+}
+
+function processPayment(method) {
+    // Simulate payment processing
+    const btn = document.querySelector('.payment-submit-btn');
+    btn.innerHTML = '<div class="spinner"></div> Processing...';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        alert(`🎉 Payment successful! Welcome to Premium!\n\nPayment Method: ${method.toUpperCase()}\nYour premium features are now active.`);
+        closePaymentModal();
+        location.reload();
+    }, 3000);
+}
+
+function closePaymentModal() {
+    document.getElementById('payment-modal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+document.getElementById('payment-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePaymentModal();
+    }
+});
+</script>
+{% endblock %}

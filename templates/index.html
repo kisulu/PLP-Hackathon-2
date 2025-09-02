@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}AI Study Buddy - Generate Smart Flashcards{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <div class="hero-icon">🧠</div>
+        <h1 class="hero-title">Generate Smart Flashcards</h1>
+        <p class="hero-subtitle">
+            Transform your study notes into interactive flashcards with AI. 
+            Perfect for African students who want to study smarter, not harder.
+        </p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="generator-card">
+        <div class="card-header">
+            <h2>📝 Paste Your Study Material</h2>
+            <p>Our AI will analyze your notes and create personalized flashcards</p>
+        </div>
+        
+        <form id="flashcard-form" class="generator-form">
+            <div class="form-group">
+                <label for="study-text">Study Notes or Text</label>
+                <textarea 
+                    id="study-text" 
+                    name="text" 
+                    placeholder="Paste your study notes, textbook content, or any educational material here. The AI will analyze it and create flashcards with questions and answers...
+
+Example: 'Photosynthesis is the process by which plants convert sunlight into energy. It occurs in the chloroplasts and involves two main stages: light-dependent reactions and the Calvin cycle. During this process, carbon dioxide and water are converted into glucose and oxygen.'"
+                    required
+                    minlength="50"
+                ></textarea>
+                <div class="char-counter">
+                    <span id="char-count">0</span> characters (minimum 50 required)
+                </div>
+            </div>
+            
+            <button type="submit" id="generate-btn" class="generate-btn" disabled>
+                <span class="btn-icon">✨</span>
+                <span class="btn-text">Generate Flashcards with AI</span>
+                <div class="btn-loader" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>Generating...</span>
+                </div>
+            </button>
+        </form>
+        
+        <div id="error-message" class="error-message" style="display: none;"></div>
+        <div id="success-message" class="success-message" style="display: none;"></div>
+    </div>
+    
+    <!-- Generated Flashcards Display -->
+    <div id="flashcards-container" class="flashcards-container" style="display: none;">
+        <div class="flashcards-header">
+            <h2>🎯 Your Generated Flashcards</h2>
+            <div class="flashcards-controls">
+                <button id="study-all-btn" class="study-btn">Study All Cards</button>
+                <button id="save-cards-btn" class="save-btn">Save to Library</button>
+            </div>
+        </div>
+        
+        <div id="flashcards-grid" class="flashcards-grid">
+            <!-- Flashcards will be dynamically inserted here -->
+        </div>
+        
+        <div class="study-stats" id="study-stats" style="display: none;">
+            <div class="stats-item">
+                <span class="stats-number" id="total-cards">0</span>
+                <span class="stats-label">Total Cards</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-number" id="studied-cards">0</span>
+                <span class="stats-label">Studied</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-number" id="correct-answers">0</span>
+                <span class="stats-label">Correct</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Start Guide -->
+    <div class="quick-guide">
+        <h3>🚀 Quick Start Guide</h3>
+        <div class="guide-steps">
+            <div class="guide-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Paste Your Notes</h4>
+                    <p>Copy and paste your study material, textbook content, or lecture notes</p>
+                </div>
+            </div>
+            <div class="guide-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>AI Generates Cards</h4>
+                    <p>Our AI analyzes your content and creates smart question-answer pairs</p>
+                </div>
+            </div>
+            <div class="guide-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Study & Learn</h4>
+                    <p>Use interactive flip cards to test your knowledge and track progress</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('flashcard-form');
+    const textArea = document.getElementById('study-text');
+    const charCount = document.getElementById('char-count');
+    const generateBtn = document.getElementById('generate-btn');
+    const errorMessage = document.getElementById('error-message');
+    const successMessage = document.getElementById('success-message');
+    const flashcardsContainer = document.getElementById('flashcards-container');
+    
+    // Character counter
+    textArea.addEventListener('input', function() {
+        const length = this.value.length;
+        charCount.textContent = length;
+        generateBtn.disabled = length < 50;
+        
+        if (length >= 50) {
+            charCount.style.color = '#059669';
+        } else {
+            charCount.style.color = '#DC2626';
+        }
+    });
+    
+    // Form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const text = textArea.value.trim();
+        if (text.length < 50) {
+            showError('Please provide at least 50 characters of study material');
+            return;
+        }
+        
+        setLoading(true);
+        hideMessages();
+        
+        try {
+            const response = await fetch('/flashcards/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                displayFlashcards(data.flashcards);
+                showSuccess(`Generated ${data.count} flashcards successfully!`);
+                textArea.value = '';
+                charCount.textContent = '0';
+                generateBtn.disabled = true;
+            } else {
+                showError(data.error || 'Failed to generate flashcards');
+            }
+        } catch (error) {
+            showError('Network error. Please check your connection and try again.');
+        } finally {
+            setLoading(false);
+        }
+    });
+    
+    function setLoading(loading) {
+        const btnText = generateBtn.querySelector('.btn-text');
+        const btnLoader = generateBtn.querySelector('.btn-loader');
+        
+        if (loading) {
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'flex';
+            generateBtn.disabled = true;
+        } else {
+            btnText.style.display = 'inline';
+            btnLoader.style.display = 'none';
+            generateBtn.disabled = textArea.value.length < 50;
+        }
+    }
+    
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+        successMessage.style.display = 'none';
+    }
+    
+    function showSuccess(message) {
+        successMessage.textContent = message;
+        successMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+    }
+    
+    function hideMessages() {
+        errorMessage.style.display = 'none';
+        successMessage.style.display = 'none';
+    }
+    
+    function displayFlashcards(flashcards) {
+        const grid = document.getElementById('flashcards-grid');
+        grid.innerHTML = '';
+        
+        flashcards.forEach((card, index) => {
+            const cardElement = createFlashcardElement(card, index);
+            grid.appendChild(cardElement);
+        });
+        
+        flashcardsContainer.style.display = 'block';
+        flashcardsContainer.scrollIntoView({ behavior: 'smooth' });
+        
+        // Update stats
+        document.getElementById('total-cards').textContent = flashcards.length;
+        document.getElementById('study-stats').style.display = 'flex';
+        
+        // Store flashcards for study mode
+        window.currentFlashcards = flashcards;
+    }
+    
+    function createFlashcardElement(card, index) {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'flashcard-preview';
+        cardDiv.innerHTML = `
+            <div class="card-preview-header">
+                <h4>${card.title}</h4>
+                <span class="difficulty-badge difficulty-${card.difficulty}">${card.difficulty}</span>
+            </div>
+            <div class="card-preview-content">
+                <p class="question-preview">${card.question}</p>
+                <button class="reveal-btn" onclick="toggleAnswer(this, ${index})">Reveal Answer</button>
+                <div class="answer-preview" style="display: none;">
+                    <p>${card.answer}</p>
+                </div>
+            </div>
+        `;
+        return cardDiv;
+    }
+    
+    // Study all cards button
+    document.getElementById('study-all-btn').addEventListener('click', function() {
+        if (window.currentFlashcards) {
+            startStudyMode(window.currentFlashcards);
+        }
+    });
+});
+
+function toggleAnswer(button, index) {
+    const answerDiv = button.nextElementSibling;
+    if (answerDiv.style.display === 'none') {
+        answerDiv.style.display = 'block';
+        button.textContent = 'Hide Answer';
+        button.classList.add('active');
+    } else {
+        answerDiv.style.display = 'none';
+        button.textContent = 'Reveal Answer';
+        button.classList.remove('active');
+    }
+}
+</script>
+{% endblock %}

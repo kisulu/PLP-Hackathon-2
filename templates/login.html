@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Login - AI Study Buddy{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">🧠</div>
+            <h1>Welcome Back</h1>
+            <p>Sign in to access your flashcards and continue studying</p>
+        </div>
+        
+        <form id="login-form" class="auth-form">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-group">
+                    <span class="input-icon">📧</span>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-group">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    <button type="button" class="password-toggle" onclick="togglePassword('password')">👁️</button>
+                </div>
+            </div>
+            
+            <button type="submit" class="auth-btn">
+                <span class="btn-text">Sign In</span>
+                <div class="btn-loader" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>Signing in...</span>
+                </div>
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>Don't have an account? <a href="{{ url_for('auth.signup') }}">Sign Up</a></p>
+        </div>
+    </div>
+    
+    <!-- Features Preview -->
+    <div class="features-preview">
+        <h2>🚀 Why Choose AI Study Buddy?</h2>
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">🤖</div>
+                <h3>AI-Powered</h3>
+                <p>Advanced AI creates smart flashcards from your notes automatically</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">📱</div>
+                <h3>Mobile Friendly</h3>
+                <p>Study anywhere, anytime with our responsive design</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🎯</div>
+                <h3>Track Progress</h3>
+                <p>Monitor your learning progress and identify areas for improvement</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🌍</div>
+                <h3>Built for Africa</h3>
+                <p>Designed specifically for African students and educational needs</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const email = formData.get('email');
+    const password = formData.get('password');
+    
+    setAuthLoading(true);
+    
+    try {
+        const response = await fetch('/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            showAuthError(data.error);
+        }
+    } catch (error) {
+        showAuthError('Network error. Please try again.');
+    } finally {
+        setAuthLoading(false);
+    }
+});
+
+function setAuthLoading(loading) {
+    const btn = document.querySelector('.auth-btn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoader = btn.querySelector('.btn-loader');
+    
+    if (loading) {
+        btnText.style.display = 'none';
+        btnLoader.style.display = 'flex';
+        btn.disabled = true;
+    } else {
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
+function showAuthError(message) {
+    // Remove existing error messages
+    const existingError = document.querySelector('.auth-error');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    // Create new error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'auth-error';
+    errorDiv.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">&times;</button>
+    `;
+    
+    const form = document.getElementById('login-form');
+    form.insertBefore(errorDiv, form.firstChild);
+}
+
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const toggle = input.nextElementSibling;
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        toggle.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        toggle.textContent = '👁️';
+    }
+}
+</script>
+{% endblock %}

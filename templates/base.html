@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Study Buddy - Smart Flashcard Generator{% endblock %}</title>
+    <meta name="description" content="Transform your study notes into interactive flashcards with AI. Perfect for African students who want to study smarter, not harder.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="nav-logo">🧠</span>
+                <span class="nav-title">AI Study Buddy</span>
+            </div>
+            
+            {% if current_user.is_authenticated %}
+            <div class="nav-menu">
+                <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+                    📝 Generate
+                </a>
+                <a href="{{ url_for('flashcard.library') }}" class="nav-link {% if request.endpoint == 'flashcard.library' %}active{% endif %}">
+                    📚 Library
+                </a>
+                <a href="{{ url_for('suggestion.suggestions') }}" class="nav-link {% if request.endpoint == 'suggestion.suggestions' %}active{% endif %}">
+                    💡 Feedback
+                </a>
+                {% if not current_user.is_premium %}
+                <a href="{{ url_for('premium') }}" class="nav-link premium-link">
+                    ⭐ Premium
+                </a>
+                {% endif %}
+            </div>
+            
+            <div class="nav-user">
+                <span class="user-info">👤 {{ current_user.username }}</span>
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button onclick="this.parentElement.remove()" class="flash-close">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🧠 AI Study Buddy</h3>
+                <p>Empowering African students with AI-powered learning tools</p>
+            </div>
+            <div class="footer-section">
+                <h4>SDG 4: Quality Education</h4>
+                <p>Built for Vibe Coding 3.0 Hackathon</p>
+            </div>
+            <div class="footer-section">
+                <h4>Contact</h4>
+                <p>📧 support@aistudybuddy.com</p>
+                <p>🌍 Serving African Students</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 AI Study Buddy. Transforming education with AI technology.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='flashcards.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

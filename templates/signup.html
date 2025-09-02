@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - AI Study Buddy{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo">🧠</div>
+            <h1>Join AI Study Buddy</h1>
+            <p>Create your account and start studying smarter with AI-powered flashcards</p>
+        </div>
+        
+        <form id="signup-form" class="auth-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-group">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="username" name="username" required placeholder="Choose a username" minlength="3">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-group">
+                    <span class="input-icon">📧</span>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-group">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" name="password" required placeholder="Create a strong password" minlength="6">
+                    <button type="button" class="password-toggle" onclick="togglePassword('password')">👁️</button>
+                </div>
+                <div class="password-strength">
+                    <div class="strength-bar">
+                        <div class="strength-fill" id="strength-fill"></div>
+                    </div>
+                    <span class="strength-text" id="strength-text">Enter a password</span>
+                </div>
+            </div>
+            
+            <button type="submit" class="auth-btn">
+                <span class="btn-text">Create Account</span>
+                <div class="btn-loader" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>Creating account...</span>
+                </div>
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a></p>
+        </div>
+    </div>
+    
+    <!-- Benefits Section -->
+    <div class="benefits-section">
+        <h2>🎓 Perfect for African Students</h2>
+        <div class="benefits-grid">
+            <div class="benefit-item">
+                <div class="benefit-icon">💰</div>
+                <h3>Affordable Learning</h3>
+                <p>Free tier with premium options. Pay with M-Pesa, cards, or bank transfer</p>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon">🌐</div>
+                <h3>Works Offline</h3>
+                <p>Download your flashcards and study even without internet connection</p>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon">📊</div>
+                <h3>Track Progress</h3>
+                <p>Monitor your learning journey with detailed analytics and insights</p>
+            </div>
+            <div class="benefit-item">
+                <div class="benefit-icon">🤝</div>
+                <h3>Community Driven</h3>
+                <p>Share feedback and help us build better tools for African education</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('signup-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const username = formData.get('username');
+    const email = formData.get('email');
+    const password = formData.get('password');
+    
+    setAuthLoading(true);
+    
+    try {
+        const response = await fetch('/auth/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            showAuthError(data.error);
+        }
+    } catch (error) {
+        showAuthError('Network error. Please try again.');
+    } finally {
+        setAuthLoading(false);
+    }
+});
+
+// Password strength checker
+document.getElementById('password').addEventListener('input', function() {
+    const password = this.value;
+    const strengthFill = document.getElementById('strength-fill');
+    const strengthText = document.getElementById('strength-text');
+    
+    let strength = 0;
+    let text = 'Weak';
+    let color = '#DC2626';
+    
+    if (password.length >= 6) strength += 1;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength += 1;
+    if (password.match(/[0-9]/)) strength += 1;
+    if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+    
+    switch (strength) {
+        case 0:
+        case 1:
+            text = 'Weak';
+            color = '#DC2626';
+            break;
+        case 2:
+            text = 'Fair';
+            color = '#F59E0B';
+            break;
+        case 3:
+            text = 'Good';
+            color = '#10B981';
+            break;
+        case 4:
+            text = 'Strong';
+            color = '#059669';
+            break;
+    }
+    
+    strengthFill.style.width = `${(strength / 4) * 100}%`;
+    strengthFill.style.backgroundColor = color;
+    strengthText.textContent = text;
+    strengthText.style.color = color;
+});
+
+function setAuthLoading(loading) {
+    const btn = document.querySelector('.auth-btn');
+    const btnText = btn.querySelector('.btn-text');
+    const btnLoader = btn.querySelector('.btn-loader');
+    
+    if (loading) {
+        btnText.style.display = 'none';
+        btnLoader.style.display = 'flex';
+        btn.disabled = true;
+    } else {
+        btnText.style.display = 'inline';
+        btnLoader.style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
+function showAuthError(message) {
+    const existingError = document.querySelector('.auth-error');
+    if (existingError) {
+        existingError.remove();
+    }
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'auth-error';
+    errorDiv.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">&times;</button>
+    `;
+    
+    const form = document.getElementById('signup-form');
+    form.insertBefore(errorDiv, form.firstChild);
+}
+
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const toggle = input.nextElementSibling;
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        toggle.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        toggle.textContent = '👁️';
+    }
+}
+</script>
+{% endblock %}

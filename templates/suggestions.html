@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if study_mode %}Study Mode{% else %}Flashcard Library{% endif %} - AI Study Buddy
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if study_mode %}
+    <!-- Study Mode -->
+    <div class="study-header">
+        <div class="study-nav">
+            <a href="{{ url_for('index') }}" class="back-btn">← Back to Generator</a>
+            <div class="study-info">
+                <span id="card-counter">Card 1 of {{ flashcards|length }}</span>
+                <button id="reset-study" class="reset-btn">🔄 Reset</button>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-stats">
+                <span id="correct-count">0</span> correct • 
+                <span id="total-studied">0</span> studied
+            </div>
+        </div>
+    </div>
+    
+    <div class="study-container">
+        <div class="flashcard-study" id="flashcard-study">
+            <!-- Flashcard will be dynamically loaded here -->
+        </div>
+        
+        <div class="study-controls">
+            <button id="prev-card" class="control-btn" disabled>
+                ← Previous
+            </button>
+            
+            <div class="answer-controls" id="answer-controls" style="display: none;">
+                <button id="incorrect-btn" class="answer-btn incorrect">
+                    ❌ Incorrect
+                </button>
+                <button id="correct-btn" class="answer-btn correct">
+                    ✅ Correct
+                </button>
+            </div>
+            
+            <button id="next-card" class="control-btn">
+                Next →
+            </button>
+        </div>
+        
+        <div class="study-help">
+            <p>💡 <strong>How to study:</strong> Click the card to flip it, then mark if you got it right or wrong</p>
+            <p>⌨️ <strong>Keyboard shortcuts:</strong> Space to flip, ← → to navigate, 1 for incorrect, 2 for correct</p>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Library Mode -->
+    <div class="library-header">
+        <div class="library-title">
+            <h1>📚 Your Flashcard Library</h1>
+            <p>{{ flashcards|length }} flashcards ready for studying</p>
+        </div>
+        
+        <div class="library-actions">
+            {% if flashcards %}
+            <a href="{{ url_for('flashcard.study_all') }}" class="study-all-btn">
+                🎯 Study All Cards
+            </a>
+            {% endif %}
+            <a href="{{ url_for('index') }}" class="generate-new-btn">
+                ✨ Generate New Cards
+            </a>
+        </div>
+    </div>
+    
+    {% if flashcards %}
+    <div class="search-container">
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="Search your flashcards..." onkeyup="filterFlashcards()">
+        </div>
+    </div>
+    
+    <div class="flashcards-library" id="flashcards-library">
+        {% for card in flashcards %}
+        <div class="library-card" data-title="{{ card.title|lower }}" data-question="{{ card.question|lower }}" data-answer="{{ card.answer|lower }}">
+            <div class="card-header">
+                <h3>{{ card.title }}</h3>
+                <span class="difficulty-badge difficulty-{{ card.difficulty }}">{{ card.difficulty }}</span>
+            </div>
+            
+            <div class="card-content">
+                <div class="question-section">
+                    <h4>Question:</h4>
+                    <p>{{ card.question }}</p>
+                </div>
+                
+                <div class="answer-section">
+                    <h4>Answer:</h4>
+                    <p>{{ card.answer[:100] }}{% if card.answer|length > 100 %}...{% endif %}</p>
+                </div>
+            </div>
+            
+            <div class="card-stats">
+                <div class="stat">
+                    <span class="stat-number">{{ card.times_studied }}</span>
+                    <span class="stat-label">Times Studied</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ ((card.correct_answers / card.times_studied * 100) | round | int) if card.times_studied > 0 else 0 }}%</span>
+                    <span class="stat-label">Accuracy</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ card.created_at.strftime('%m/%d') }}</span>
+                    <span class="stat-label">Created</span>
+                </div>
+            </div>
+            
+            <div class="card-actions">
+                <a href="{{ url_for('flashcard.study_single', flashcard_id=card.id) }}" class="study-btn">
+                    🎯 Study
+                </a>
+                <button onclick="deleteFlashcard({{ card.id }})" class="delete-btn">
+                    🗑️ Delete
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <div class="empty-library">
+        <div class="empty-icon">📚</div>
+        <h2>Your library is empty</h2>
+        <p>Generate your first set of flashcards to get started!</p>
+        <a href="{{ url_for('index') }}" class="generate-first-btn">
+            ✨ Generate Your First Flashcards
+        </a>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+{% if study_mode %}
+// Study Mode JavaScript
+let currentCardIndex = 0;
+let isFlipped = false;
+let studyStats = {
+    correct: 0,
+    total: 0
+};
+
+const flashcards = {{ flashcards | tojson }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCard(currentCardIndex);
+    updateProgress();
+    
+    // Event listeners
+    document.getElementById('prev-card').addEventListener('click', () => navigateCard(-1));
+    document.getElementById('next-card').addEventListener('click', () => navigateCard(1));
+    document.getElementById('correct-btn').addEventListener('click', () => markAnswer(true));
+    document.getElementById('incorrect-btn').addEventListener('click', () => markAnswer(false));
+    document.getElementById('reset-study').addEventListener('click', resetStudy);
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        switch(e.key) {
+            case ' ':
+                e.preventDefault();
+                flipCard();
+                break;
+            case 'ArrowLeft':
+                navigateCard(-1);
+                break;
+            case 'ArrowRight':
+                navigateCard(1);
+                break;
+            case '1':
+                if (isFlipped) markAnswer(false);
+                break;
+            case '2':
+                if (isFlipped) markAnswer(true);
+                break;
+        }
+    });
+});
+
+function loadCard(index) {
+    const card = flashcards[index];
+    const studyContainer = document.getElementById('flashcard-study');
+    
+    studyContainer.innerHTML = `
+        <div class="flashcard-3d" onclick="flipCard()">
+            <div class="flashcard-inner" id="flashcard-inner">
+                <div class="flashcard-front">
+                    <div class="card-type">Question</div>
+                    <h3>${card.title}</h3>
+                    <p>${card.question}</p>
+                    <div class="flip-hint">Click to reveal answer</div>
+                </div>
+                <div class="flashcard-back">
+                    <div class="card-type">Answer</div>
+                    <h3>${card.title}</h3>
+                    <p>${card.answer}</p>
+                    <div class="flip-hint">How did you do?</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    isFlipped = false;
+    document.getElementById('answer-controls').style.display = 'none';
+    updateCardCounter();
+    updateNavigationButtons();
+}
+
+function flipCard() {
+    const cardInner = document.getElementById('flashcard-inner');
+    const answerControls = document.getElementById('answer-controls');
+    
+    if (!isFlipped) {
+        cardInner.style.transform = 'rotateY(180deg)';
+        answerControls.style.display = 'flex';
+        isFlipped = true;
+    } else {
+        cardInner.style.transform = 'rotateY(0deg)';
+        answerControls.style.display = 'none';
+        isFlipped = false;
+    }
+}
+
+function navigateCard(direction) {
+    const newIndex = currentCardIndex + direction;
+    if (newIndex >= 0 && newIndex < flashcards.length) {
+        currentCardIndex = newIndex;
+        loadCard(currentCardIndex);
+        updateProgress();
+    }
+}
+
+function markAnswer(isCorrect) {
+    studyStats.total++;
+    if (isCorrect) {
+        studyStats.correct++;
+    }
+    
+    // Update flashcard stats in backend
+    updateFlashcardStats(flashcards[currentCardIndex].id, isCorrect);
+    
+    // Show feedback
+    showAnswerFeedback(isCorrect);
+    
+    // Auto-advance after 1 second
+    setTimeout(() => {
+        if (currentCardIndex < flashcards.length - 1) {
+            navigateCard(1);
+        } else {
+            showStudyComplete();
+        }
+    }, 1000);
+    
+    updateProgress();
+}
+
+function updateFlashcardStats(flashcardId, isCorrect) {
+    fetch('/flashcards/update_stats', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            flashcard_id: flashcardId,
+            is_correct: isCorrect
+        })
+    }).catch(error => console.error('Failed to update stats:', error));
+}
+
+function showAnswerFeedback(isCorrect) {
+    const feedback = document.createElement('div');
+    feedback.className = `answer-feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+    feedback.textContent = isCorrect ? '✅ Correct!' : '❌ Keep studying!';
+    
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+        feedback.remove();
+    }, 2000);
+}
+
+function updateProgress() {
+    const progress = ((currentCardIndex + 1) / flashcards.length) * 100;
+    document.getElementById('progress-fill').style.width = `${progress}%`;
+    
+    document.getElementById('correct-count').textContent = studyStats.correct;
+    document.getElementById('total-studied').textContent = studyStats.total;
+}
+
+function updateCardCounter() {
+    document.getElementById('card-counter').textContent = `Card ${currentCardIndex + 1} of ${flashcards.length}`;
+}
+
+function updateNavigationButtons() {
+    document.getElementById('prev-card').disabled = currentCardIndex === 0;
+    document.getElementById('next-card').disabled = currentCardIndex === flashcards.length - 1;
+}
+
+function resetStudy() {
+    currentCardIndex = 0;
+    studyStats = { correct: 0, total: 0 };
+    loadCard(currentCardIndex);
+    updateProgress();
+}
+
+function showStudyComplete() {
+    const accuracy = studyStats.total > 0 ? Math.round((studyStats.correct / studyStats.total) * 100) : 0;
+    
+    alert(`🎉 Study session complete!\n\nResults:\n✅ Correct: ${studyStats.correct}\n❌ Incorrect: ${studyStats.total - studyStats.correct}\n📊 Accuracy: ${accuracy}%\n\nKeep up the great work!`);
+}
+
+{% else %}
+// Library Mode JavaScript
+function filterFlashcards() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const cards = document.querySelectorAll('.library-card');
+    
+    cards.forEach(card => {
+        const title = card.dataset.title;
+        const question = card.dataset.question;
+        const answer = card.dataset.answer;
+        
+        if (title.includes(searchTerm) || question.includes(searchTerm) || answer.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+async function deleteFlashcard(cardId) {
+    if (!confirm('Are you sure you want to delete this flashcard?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/flashcards/delete/${cardId}`, {
+            method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to delete flashcard: ' + data.error);
+        }
+    } catch (error) {
+        alert('Network error. Please try again.');
+    }
+}
+{% endif %}
+</script>
+{% endblock %}

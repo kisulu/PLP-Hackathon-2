@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Study Flashcards - AI Study Buddy{% endblock %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='flashcards.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="study-container">
+    <div class="study-header">
+        <h1>📚 Your Flashcard Library</h1>
+        <p>Study your AI-generated flashcards and track your progress</p>
+        
+        <div class="study-controls">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search flashcards..." onkeyup="filterFlashcards()">
+            </div>
+            
+            <div class="filter-controls">
+                <select id="difficultyFilter" onchange="filterFlashcards()">
+                    <option value="">All Difficulties</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+                
+                <button onclick="startStudySession()" class="study-all-btn">
+                    <span>🎯</span>
+                    Study All
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    {% if flashcards %}
+    <div class="flashcard-stats">
+        <div class="stat-card">
+            <span class="stat-icon">📊</span>
+            <div>
+                <span class="stat-number">{{ flashcards|length }}</span>
+                <span class="stat-label">Total Cards</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon">🎯</span>
+            <div>
+                <span class="stat-number">{{ flashcards|selectattr('study_count')|list|length }}</span>
+                <span class="stat-label">Studied</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon">⭐</span>
+            <div>
+                <span class="stat-number">{{ (flashcards|map(attribute='study_count')|sum / flashcards|length)|round(1) if flashcards else 0 }}</span>
+                <span class="stat-label">Avg. Studies</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Study Mode -->
+    <div id="studyMode" class="study-mode" style="display: none;">
+        <div class="study-progress">
+            <div class="progress-info">
+                <span id="currentCard">1</span> of <span id="totalCards">{{ flashcards|length }}</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <button onclick="exitStudyMode()" class="exit-study-btn">Exit Study Mode</button>
+        </div>
+        
+        <div class="flashcard-container">
+            <div class="flashcard-3d" id="studyCard">
+                <div class="flashcard-front">
+                    <div class="card-header">
+                        <span class="card-title" id="cardTitle"></span>
+                        <span class="card-difficulty" id="cardDifficulty"></span>
+                    </div>
+                    <div class="card-content">
+                        <h3>Question</h3>
+                        <p id="cardQuestion"></p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="flip-hint">Click to reveal answer</span>
+                    </div>
+                </div>
+                
+                <div class="flashcard-back">
+                    <div class="card-header">
+                        <span class="card-title">Answer</span>
+                    </div>
+                    <div class="card-content">
+                        <p id="cardAnswer"></p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="answer-buttons">
+                            <button onclick="markAnswer(false)" class="answer-btn incorrect">
+                                <span>❌</span>
+                                Incorrect
+                            </button>
+                            <button onclick="markAnswer(true)" class="answer-btn correct">
+                                <span>✅</span>
+                                Correct
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="study-navigation">
+            <button onclick="previousCard()" id="prevBtn" class="nav-btn">
+                <span>⬅️</span>
+                Previous
+            </button>
+            <button onclick="nextCard()" id="nextBtn" class="nav-btn">
+                Next
+                <span>➡️</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Library View -->
+    <div id="libraryView" class="library-view">
+        <div class="flashcard-grid" id="flashcardGrid">
+            {% for card in flashcards %}
+            <div class="flashcard-item" data-difficulty="{{ card

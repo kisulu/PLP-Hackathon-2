@@ -1,0 +1,74 @@
+Build a web app called AI Study Buddy – Flashcard Generator for the Vibe Coding 3.0 Hackathon, aligned with SDG 4: Quality Education.
+
+Core Features:
+
+Flashcard Generator
+
+Users paste study notes or text.
+
+Backend (Flask + Python) sends text to the Hugging Face Question-Answering API.
+
+Frontend (HTML, CSS animations, JavaScript) dynamically creates interactive flip-style flashcards.
+
+Store flashcards in MySQL for future reuse.
+
+Suggestion Box
+
+Students can drop suggestions/feedback.
+
+All students who submitted suggestions should receive a confirmation email at once (bulk email feature).
+
+Authentication System
+
+Signup and Login pages with username/email + password.
+
+Session management to ensure personalized flashcards and suggestions tracking.
+
+Judging Criteria to Keep in Mind:
+
+Technical Creativity & Flow → Original use of AI + flashcards.
+
+UI/UX Design → Simple but appealing card flip design and easy navigation.
+
+Prototyping & Execution → Rapid build with Flask routes, API integration, and MySQL models.
+
+Problem Clarity & Solution Quality → Solve a real student problem: quick flashcard generation from notes.
+
+Market Insight → Target African student community, scalable with IntaSend for future monetization.
+
+Tech Stack:
+
+Frontend: HTML5, CSS, JavaScript (flip animations).
+
+Backend: Python Flask + MySQL.
+
+AI Integration: Hugging Face QA API.
+
+Emailing: Flask-Mail or similar package to send bulk confirmation emails.
+
+Payments (optional future monetization): IntaSend API.
+
+
+ai-study-buddy/
+│── app.py                  # Main Flask app
+│── config.py               # Configurations (DB, Email, etc.)
+│── requirements.txt        # Dependencies
+│── /templates              # HTML files
+│   ├── base.html
+│   ├── index.html          # Homepage (paste notes)
+│   ├── flashcards.html     # Flashcards display
+│   ├── login.html
+│   ├── signup.html
+│   ├── suggestions.html
+│── /static                 # CSS, JS, images
+│   ├── style.css
+│   ├── flashcards.js
+│── /models.py              # SQLAlchemy models
+│── /routes                 # Flask blueprints
+│   ├── auth_routes.py
+│   ├── flashcard_routes.py
+│   ├── suggestion_routes.py
+│── /utils
+│   ├── email_utils.py      # Send bulk emails
+│   ├── ai_utils.py         # Hugging Face API calls
+│── /migrations             # Alembic (if using Flask-Migrate)
