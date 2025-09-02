@@ -63,7 +63,7 @@ class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     intasend_invoice_id = db.Column(db.String(100), unique=True, nullable=False)
-    amount = db.Column(db.Decimal(10, 2), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)   # fixed precision
     currency = db.Column(db.String(3), default='KES')
     status = db.Column(db.String(20), default='pending')
     payment_method = db.Column(db.String(50))
